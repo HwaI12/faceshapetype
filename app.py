@@ -3,7 +3,9 @@ import pickle
 from PIL import Image
 import cv2
 import numpy as np
-from svm_model import detector, predictor
+import torch
+import torch.nn as nn
+from torchvision import models, transforms
 
 # 顔タイプとおすすめのメガネ
 face_type_glasses = {
@@ -34,36 +36,76 @@ face_type_glasses = {
     }
 }
 
-# 保存したSVMモデルを読み込む
-with open("svm_model.pkl", "rb") as f:
-    model = pickle.load(f)
+# ResNet model for feature extraction (same as training script)
+def get_resnet_model():
+    model = models.resnet152(weights='DEFAULT') # Use string for weights
+    model.fc = nn.Identity()
+    model.eval()
+    return model
 
-# Streamlit UI
-st.title("顔タイプ診断アプリ")
-st.write("顔画像をアップロードしてください")
+# Preprocessing transformations for ResNet (same as training script)
+resnet_transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+])
 
-uploaded_image = st.file_uploader("顔画像をアップロード", type=["jpg", "jpeg", "png"])
-
-# 特徴量抽出の関数
+# Extract features using ResNet (same as training script)
+model_resnet = get_resnet_model() # Instantiate the model here
 def extract_features(image):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    faces = detector(gray)
-    if len(faces) == 0:
+    try:
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        pil_image = transforms.ToPILImage()(image_rgb)
+        input_tensor = resnet_transform(pil_image).unsqueeze(0)
+        with torch.no_grad():
+            features = model_resnet(input_tensor).numpy().flatten()
+        return features
+    except Exception as e:
+        print(f"Error extracting features: {e}")
         return None
-    landmarks = predictor(gray, faces[0])
-    features = np.array([[p.x, p.y] for p in landmarks.parts()]).flatten()
-    return features
 
-if uploaded_image is not None:
-    image = Image.open(uploaded_image)
-    st.image(image, caption="アップロードした画像", use_container_width=True)
+# モデルとPCAのロード
+try:
+    with open("resnet152_model.pkl", "rb") as f:
+        model = pickle.load(f)
+    with open("pca_model.pkl", "rb") as f:
+        pca = pickle.load(f)
+except FileNotFoundError:
+    st.error("必要なモデルファイルが見つかりませんでした。")
+    st.stop()  # Stop execution if files are missing
 
-    opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-    extracted_feature = extract_features(opencv_image)
+st.title("顔タイプ診断アプリ")
+uploaded_image = st.file_uploader("顔画像をアップロードしてください", type=["jpg", "jpeg", "png"])
 
-    if extracted_feature is not None:
-        face_type = model.predict(extracted_feature.reshape(1, -1))[0]  # 予測
-        st.subheader(f"あなたの顔タイプ: {face_type}")
-        st.write(f"おすすめのメガネデザイン: {face_type_glasses[face_type]['似合うメガネ']}")
-    else:
-        st.write("顔が検出できませんでした。別の画像を試してください。")
+if uploaded_image:
+    try:
+        image = Image.open(uploaded_image)
+        st.image(image, caption="アップロードした画像", use_container_width=True)
+
+        opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        gray_image = cv2.cvtColor(opencv_image, cv2.COLOR_BGR2GRAY)
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        faces = face_cascade.detectMultiScale(gray_image, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+
+        if len(faces) == 0:
+            st.error("顔が検出できませんでした。別の画像をお試しください。")
+        else:
+            x, y, w, h = faces[0]
+            face_image = opencv_image[y:y+h, x:x+w]
+
+            # Resize to 224x224 for ResNet input
+            face_image_resized = cv2.resize(face_image, (224, 224)) #Correct resize size
+
+            extracted_feature = extract_features(face_image_resized)
+
+            if extracted_feature is None:
+                st.error("顔の特徴量を抽出できませんでした。")
+            else:
+                extracted_feature_pca = pca.transform(extracted_feature.reshape(1, -1))
+                face_type = model.predict(extracted_feature_pca)[0]
+
+                st.subheader(f"あなたの顔タイプ: {face_type}")
+                st.write(f"おすすめのメガネデザイン: {face_type_glasses[face_type]['似合うメガネ']}")
+
+    except Exception as e:
+        st.error(f"エラーが発生しました: {e}")
