@@ -3,22 +3,16 @@
 ## 概要
 顔の形状を分類するアプリケーション。
 
-## 必要条件
-- データセット: [Face Shape Dataset](https://www.kaggle.com/datasets/niten19/face-shape-dataset)
-<!-- - 顔ランドマークファイル: `shape_predictor_68_face_landmarks.dat` -->
-
-## インストール
-```bash
-pip install -r requirements.txt
-```
-
-## アプリケーションの実行
-```bash
-streamlit run app.py
-```
+## 実行手順
+- データセット[Face Shape Dataset](https://www.kaggle.com/datasets/niten19/face-shape-dataset)ディレクトリに配置。
+- 環境のインストール`pip install -r requirements.txt`
+- `python script.py`を実行。
+- 学習済みモデルが`svm_model.pkl`と`pca_model.pkl`に保存されます。
 
 ## 機能
-顔ランドマーク検出を利用した顔の形状分類
+- 特徴抽出: ResNet-152を用いて顔画像の高次特徴を抽出
+- 分類: PCAで次元削減し、SVMで顔タイプを分類
+- モデル保存: トレーニング済みSVMモデルとPCAを保存
 
 ## 正答率
 Test Accuracy: 0.448
@@ -35,3 +29,6 @@ Test Accuracy: 0.448
    macro avg       0.45      0.45      0.44      1000
 weighted avg       0.45      0.45      0.44      1000
 ```
+
+## streamlitにデプロイ
+https://hwai12-faceshapetype-app-yaeveg.streamlit.app/

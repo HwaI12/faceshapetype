@@ -111,7 +111,7 @@ model = GridSearchCV(SVC(), param_grid, cv=cv, verbose=3, n_jobs=-1)
 model.fit(train_features_pca, train_labels)
 
 # Save the model and PCA
-with open("resnet152_model.pkl", "wb") as f:
+with open("svm_model.pkl", "wb") as f:
     pickle.dump(model.best_estimator_, f)
 
 with open("pca_model.pkl", "wb") as f:

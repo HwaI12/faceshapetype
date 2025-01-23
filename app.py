@@ -66,7 +66,7 @@ def extract_features(image):
 
 # モデルとPCAのロード
 try:
-    with open("resnet152_model.pkl", "rb") as f:
+    with open("svm_model.pkl", "rb") as f:
         model = pickle.load(f)
     with open("pca_model.pkl", "rb") as f:
         pca = pickle.load(f)
