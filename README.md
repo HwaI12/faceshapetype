@@ -29,6 +29,3 @@ Test Accuracy: 0.448
    macro avg       0.45      0.45      0.44      1000
 weighted avg       0.45      0.45      0.44      1000
 ```
-
-## streamlitにデプロイ
-https://hwai12-faceshapetype-app-yaeveg.streamlit.app/
