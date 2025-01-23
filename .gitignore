@@ -1,3 +1,4 @@
 faceshape/
 FaceShape Dataset/
 *.dat
+__pycache__/

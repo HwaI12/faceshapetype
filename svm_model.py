@@ -6,6 +6,7 @@ from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 import pickle
 from tqdm import tqdm
+import random
 
 # データセットのパス
 dataset_path = "FaceShape Dataset"
@@ -33,33 +34,39 @@ def extract_features(image):
     return features
 
 # データのロード
-def load_data(dataset_path):
+def load_data(dataset_path, num_samples=None): # num_samples引数を追加
     features = []
     labels = []
     for face_type in os.listdir(dataset_path):
         face_type_path = os.path.join(dataset_path, face_type)
-        if os.path.isdir(face_type_path):  # ディレクトリのみを処理
-            # tqdmを使用して進捗表示
-            for filename in tqdm(os.listdir(face_type_path), desc=f"Loading {face_type} images"):
+        if os.path.isdir(face_type_path):
+            image_files = [f for f in os.listdir(face_type_path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+
+            # サンプリング処理を追加
+            if num_samples is not None and len(image_files) > num_samples:
+                image_files = random.sample(image_files, num_samples)
+
+            for filename in tqdm(image_files, desc=f"Loading {face_type} images"):
                 image_path = os.path.join(face_type_path, filename)
-                # 画像ファイルのみを処理する（非画像ファイルをスキップ）
-                if not image_path.lower().endswith(('.png', '.jpg', '.jpeg')):
-                    continue
-                try:
-                    img = cv2.imread(image_path)
-                    if img is None:
-                        continue  # 画像が読み込めなければスキップ
-                    extracted_feature = extract_features(img)
-                    if extracted_feature is not None:
-                        features.append(extracted_feature)
-                        labels.append(face_type)
-                except Exception as e:
-                    print(f"Error processing {image_path}: {e}")
+                image = cv2.imread(image_path)
+
+                # 特徴量を抽出
+                feature = extract_features(image)
+
+                # Noneをスキップ
+                if feature is not None:
+                    features.append(feature)
+                    labels.append(face_type)
+                else:
+                    print(f"Skipped: {image_path} (No face detected)")
+
+    # 最終的なデータの整形
     return np.array(features), np.array(labels)
 
-# 学習データをロード
-training_features, training_labels = load_data(os.path.join(dataset_path, "training_set"))
-testing_features, testing_labels = load_data(os.path.join(dataset_path, "testing_set"))
+# サンプル数を指定してデータロード (例: 各タイプ100枚に縮小)
+num_samples_per_type = 100 # 各タイプ100枚に制限
+training_features, training_labels = load_data(os.path.join(dataset_path, "training_set"), num_samples_per_type)
+testing_features, testing_labels = load_data(os.path.join(dataset_path, "testing_set"), num_samples_per_type)
 
 print(f"Number of training samples: {len(training_features)}")
 print(f"Number of testing samples: {len(testing_features)}")

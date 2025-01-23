@@ -3,8 +3,6 @@ import pickle
 from PIL import Image
 import cv2
 import numpy as np
-import os
-import random
 from svm_model import detector, predictor
 
 # 顔タイプとおすすめのメガネ
@@ -34,15 +32,6 @@ face_type_glasses = {
         "似合うメガネ": ["ボストン型", "ウェリントン型", "オーバル型"],
         "ポイント": "上部にボリュームのあるフレームは避け、下部にボリュームがあるものを選ぶと良い。"
     }
-}
-
-# 顔タイプごとの画像
-face_type_images = {
-    "Round": "path/to/Round/images",
-    "Oblong": "path/to/Oblong/images",
-    "Oval": "path/to/Oval/images",
-    "Square": "path/to/Square/images",
-    "Heart": "path/to/Heart/images"
 }
 
 # 保存したSVMモデルを読み込む
@@ -76,10 +65,5 @@ if uploaded_image is not None:
         face_type = model.predict(extracted_feature.reshape(1, -1))[0]  # 予測
         st.subheader(f"あなたの顔タイプ: {face_type}")
         st.write(f"おすすめのメガネデザイン: {face_type_glasses[face_type]['似合うメガネ']}")
-        
-        face_type_folder = face_type_images[face_type]
-        sample_image = random.choice(os.listdir(face_type_folder))
-        sample_image_path = os.path.join(face_type_folder, sample_image)
-        st.image(sample_image_path, caption=f"{face_type}タイプの例", use_container_width=True)
     else:
         st.write("顔が検出できませんでした。別の画像を試してください。")
