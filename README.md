@@ -15,3 +15,4 @@
 - モデル保存: トレーニング済みSVMモデルとPCAを保存
 
 ## レポート
+[モデルトレーニングレポート](./reports/model_training_report.md)
