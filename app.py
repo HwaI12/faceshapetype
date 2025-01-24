@@ -66,9 +66,9 @@ def extract_features(image):
 
 # モデルとPCAのロード
 try:
-    with open("svm_model.pkl", "rb") as f:
+    with open("models/svm_face_shape_model.pkl", "rb") as f:
         model = pickle.load(f)
-    with open("pca_model.pkl", "rb") as f:
+    with open("models/pca_dim_reduction.pkl", "rb") as f:
         pca = pickle.load(f)
 except FileNotFoundError:
     st.error("必要なモデルファイルが見つかりませんでした。")
